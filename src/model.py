@@ -168,6 +168,30 @@ class GPT(nn.Module):
     
     return logits, loss
 
+  def predict(self, src, device='cpu'):
+    self.to(device)
+
+    b, t = src.size()
+    assert t <= self.block_size, \
+      "Cannot forward, model block size is exhausted."
+
+    for i in range(int(self.config.max_length)):
+      b, t = src.size()
+      token_embeddings = self.tok_emb(src)
+      position_embeddings = self.pos_emb[:, :t, :]
+      x = self.drop(token_embeddings + position_embeddings)
+      x = self.blocks(x)
+      x = self.ln_f(x)
+      logits = self.head(x)
+
+      _, idx = torch.max(logits[:,-1], dim=-1)
+      src = torch.cat((src, idx), dim=-1).to(device)
+
+      if idx == self.config.eos_idx:
+        break
+
+    return src
+
 
 if __name__ == "__main__":
   config_filename = 'config.yaml'

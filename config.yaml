@@ -1,18 +1,21 @@
 
 model:
-  n_embd: 256
+  n_embd: 512
   n_head: 8
-  n_layer: 3
+  n_layer: 16
   embd_pdrop: 0.1
   attn_pdrop: 0.1
   resid_pdrop: 0.1
   vocab_size: 48
-  block_size: 512
+  block_size: 1024
   pad_idx: 0
+  sos_idx: 
+  eos_idx:
+  max_length: 1024
 
 train:
   max_epochs: 50
-  batch_size: 64
+  batch_size: 8
   learning_rate: 0.0003
   betas: [0.9, 0.95]
   grad_norm_clip: 1.0
