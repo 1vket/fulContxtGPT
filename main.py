@@ -13,7 +13,7 @@ config = defect.torch_util.load_config(config_filename)
 model = GPT(config.model)
 
 # dataset
-train_filename = './data/cc100split/00001.txt'
+train_filename = './data/cc100set/001.txt'
 test_filename = './data/cc100split/00002.txt'
 json_filename = './token.json'
 

@@ -168,29 +168,47 @@ class GPT(nn.Module):
     
     return logits, loss
 
-  def predict(self, src, device='cpu'):
+  def predict(self, src, device='cpu', beam=3):
+    self.eval()
     self.to(device)
 
     b, t = src.size()
     assert t <= self.block_size, \
       "Cannot forward, model block size is exhausted."
 
+    src_list = []
+    src_list.append(src)
+
     for i in range(int(self.config.max_length)):
-      b, t = src.size()
-      token_embeddings = self.tok_emb(src)
-      position_embeddings = self.pos_emb[:, :t, :]
-      x = self.drop(token_embeddings + position_embeddings)
-      x = self.blocks(x)
-      x = self.ln_f(x)
-      logits = self.head(x)
-
-      _, idx = torch.max(logits[:,-1], dim=-1)
-      src = torch.cat((src, idx), dim=-1).to(device)
-
-      if idx == self.config.eos_idx:
+      if len(ans) >= 3:
         break
 
-    return src
+      src_tmp = []
+      for pr, src in src_list:
+        b, t = src.size()
+        token_embeddings = self.tok_emb(src)
+        position_embeddings = self.pos_emb[:, :t, :]
+        x = self.drop(token_embeddings + position_embeddings)
+        x = self.blocks(x)
+        x = self.ln_f(x)
+        logits = self.head(x)
+
+        prob = sorted([[p,i] for i,p in enumerate(logits[0][-1])])[:beam]
+
+        for p, idx in prob:
+          src = torch.cat(
+            (src, torch.LongTensor(idx).view(1,1)), dim=-1).to(device)
+
+          if idx == self.config.eos_idx:
+            ans.append([pr*p, src])
+            break
+          else:
+            src_tmp.append([pr*p, src])
+
+      for p, src in sorted(src_tmp)[:beam]:
+        src_list.append([p, src])
+
+    return ans
 
 
 if __name__ == "__main__":

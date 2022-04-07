@@ -20,7 +20,7 @@ model.load_state_dict(torch.load(config.train.ckpt_path))
 
 # predict
 src = input('>>')
-src = defect.text.sentence2phoneSymbol(src)
+src = defect.text.sentence2phoneSymbol(src)[:-1]
 src = [tokenizer['p2i'][p] for p in src]
 src = torch.LongTensor(src).unsqueeze(0)
 out = model.predict(src, device='cpu').squeeze(0)
