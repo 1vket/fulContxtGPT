@@ -7,9 +7,6 @@ from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
 
-
-logger = logging.getLogger(__name__)
-
 class Trainer:
   def __init__(self, model, train_dataset, test_dataset, config):
     self.model = model
@@ -28,7 +25,6 @@ class Trainer:
     raw_model = self.model.module if hasattr(self.model,"module")  \
       else self.model
 
-    logger.info("saving %s", self.config.ckpt_path)
     torch.save(raw_model.state_dict(), self.config.ckpt_path)
 
   def train(self):
@@ -65,10 +61,12 @@ class Trainer:
             self.tokens += (y >= 1).sum()
             if self.tokens < config.warmup_tokens:
               lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
-            else:
+            elif self.tokens < config.final_tokens:
               progress = float(self.tokens - config.warmup_tokens) / \
                 float(max(1, config.final_tokens - config.warmup_tokens))
               lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+            else:
+              lr_mult = 0.1
             lr = config.learning_rate * lr_mult
             for param_group in optimizer.param_groups:
               param_group['lr'] = lr
@@ -82,7 +80,6 @@ class Trainer:
 
       if not is_train:
         test_loss = float(np.mean(losses))
-        logger.info("test loss: %f", test_loss)
         return test_loss
     
     best_loss = float('inf')

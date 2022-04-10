@@ -20,5 +20,5 @@ pip install \
   pyyaml \
   attrdict \
   librosa \
-  torch \
-  git+https://github.com/1vket/defect
+pip install torch==1.7.1+cu110 -f https://download.pytorch.org/whl/cu110/torch_stable.html
+pip install git+https://github.com/1vket/defect

@@ -6,9 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-logger = logging.getLogger(__name__)
-
-
 class Attention(nn.Module):
   
   def __init__(self, config):
@@ -91,9 +88,6 @@ class GPT(nn.Module):
 
     self.block_size = config.block_size
     self.apply(self._init_weights)
-
-    logger.info("number of parameters: %e", 
-      sum(p.numel() for p in self.parameters()))
 
   def get_block_size(self):
     return self.block_size
