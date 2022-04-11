@@ -68,7 +68,7 @@ class Trainer:
             else:
               progress = float(self.tokens - config.warmup_tokens) / \
                 float(max(1, config.final_tokens - config.warmup_tokens))
-              lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+              lr_mult = max(0.01, 0.5 * (1.0 + math.cos(math.pi * progress)))
             lr = config.learning_rate * lr_mult
             for param_group in optimizer.param_groups:
               param_group['lr'] = lr

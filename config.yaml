@@ -3,7 +3,7 @@ model:
   conv_embd: True
   n_kernel: 5
   n_stride: 1
-  n_pad: 0
+  n_pad: 2
   n_embd: 512
   n_head: 8
   n_layer: 16
