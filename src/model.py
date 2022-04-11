@@ -78,8 +78,13 @@ class GPT(nn.Module):
 
     self.config = config
 
-    self.tok_emb = nn.Embedding(
-      config.vocab_size, config.n_embd, padding_idx=config.pad_idx)
+    if config.conv_embd:
+      self.tok_emb = nn.Conv1d(
+        1, config.e_embd, config.n_kernel, config.n_stride, config.n_pad)
+    else:
+      self.tok_emb = nn.Embedding(
+        config.vocab_size, config.n_embd, padding_idx=config.pad_idx)
+
     self.pos_emb = nn.Parameter(
       torch.zeros(1, config.block_size, config.n_embd))
     self.drop = nn.Dropout(config.embd_pdrop)
@@ -153,7 +158,13 @@ class GPT(nn.Module):
     assert t <= self.block_size, \
       "Cannot forward, model block size is exhausted."
 
-    token_embeddings = self.tok_emb(idx)
+    if config.conv_embd:
+      idx = idx.unsqueeze(1)
+      token_embeddings = self.tok_emb(idx)
+      token_embeddings = token_embeddings.transpose(1,2)
+    else:
+      token_embeddings = self.tok_emb(idx)
+
     position_embeddings = self.pos_emb[:, :t, :]
     x = self.drop(token_embeddings + position_embeddings)
     x = self.blocks(x)
@@ -178,7 +189,12 @@ class GPT(nn.Module):
 
     for i in range(int(self.config.max_length)):
       b, t = src.size()
-      token_embeddings = self.tok_emb(src)
+      if config.conv_embd:
+        src = src.unsqueeze(1)
+        token_embeddings = self.tok_emb(src)
+        token_embeddings = token_embeddings.transpose(1,2)
+      else:
+        token_embeddings = self.tok_emb(src)
       position_embeddings = self.pos_emb[:, :t, :]
       x = self.drop(token_embeddings + position_embeddings)
       x = self.blocks(x)
