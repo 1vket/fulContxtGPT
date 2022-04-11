@@ -169,6 +169,7 @@ class GPT(nn.Module):
     return logits, loss
 
   def predict(self, src, device='cpu'):
+    self.eval()
     self.to(device)
 
     b, t = src.size()
@@ -185,6 +186,7 @@ class GPT(nn.Module):
       logits = self.head(x)
 
       _, idx = torch.max(logits[:,-1], dim=-1)
+      idx = torch.LongTensor([idx]).view(1,-1)
       src = torch.cat((src, idx), dim=-1).to(device)
 
       if idx == self.config.eos_idx:
