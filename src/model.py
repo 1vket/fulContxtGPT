@@ -80,7 +80,7 @@ class GPT(nn.Module):
 
     if config.conv_embd:
       self.tok_emb = nn.Conv1d(
-        1, config.n_embd, config.n_kernel, config.n_stride, config.n_pad)
+        1, config.n_embd, config.n_kernel, config.n_stride)
     else:
       self.tok_emb = nn.Embedding(
         config.vocab_size, config.n_embd, padding_idx=config.pad_idx)
@@ -118,8 +118,8 @@ class GPT(nn.Module):
     
     decay = set()
     no_decay = set()
-    whitelist_weight_modules = (nn.Linear)
-    blacklist_weight_modules = (nn.LayerNorm, nn.Embedding, nn.Conv1d)
+    whitelist_weight_modules = (nn.Linear, nn.Conv1d)
+    blacklist_weight_modules = (nn.LayerNorm, nn.Embedding)
     for mn, m in self.named_modules():
       for pn, p in m.named_parameters():
         fpn = '%s.%s' % (mn, pn) if mn else pn
@@ -159,11 +159,14 @@ class GPT(nn.Module):
       "Cannot forward, model block size is exhausted."
 
     if self.config.conv_embd:
+      idx = F.pad(idx, (self.config.n_pad, 0))
       idx = idx.unsqueeze(1) / self.config.vocab_size
       token_embeddings = self.tok_emb(idx)
       token_embeddings = token_embeddings.transpose(1,2)
     else:
       token_embeddings = self.tok_emb(idx)
+
+    b, t, e = token_embeddings.size()
 
     position_embeddings = self.pos_emb[:, :t, :]
     x = self.drop(token_embeddings + position_embeddings)
@@ -190,18 +193,24 @@ class GPT(nn.Module):
     for i in range(int(self.config.max_length)):
       b, t = src.size()
       if self.config.conv_embd:
-        src = src.unsqueeze(1) / self.config.vocab_size
-        token_embeddings = self.tok_emb(src)
+        input = F.pad(idx, (self.config.n_pad, 0))
+        input = input.unsqueeze(1) / self.config.vocab_size
+        token_embeddings = self.tok_emb(input)
         token_embeddings = token_embeddings.transpose(1,2)
       else:
         token_embeddings = self.tok_emb(src)
+      b, t, _ = token_embeddings.size()
       position_embeddings = self.pos_emb[:, :t, :]
       x = self.drop(token_embeddings + position_embeddings)
       x = self.blocks(x)
       x = self.ln_f(x)
       logits = self.head(x)
 
+      _, o = torch.max(logits, dim=-1)
+      print(o)
+
       _, idx = torch.max(logits[:,-1], dim=-1)
+
       idx = torch.LongTensor([idx]).view(1,-1)
       src = torch.cat((src, idx), dim=-1).to(device)
 
