@@ -37,11 +37,5 @@ with open('out.txt', 'w') as f:
 
 print(f"output:",*out)
 
-waveform, sr = pyopenjtalk.synthesize(out)
-
-print("create")
-
-sf.write('out.wav', waveform, sr)
-
 
 

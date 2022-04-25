@@ -26,7 +26,14 @@ class fulContxtDataset(Dataset):
         if len(data) == 0:
           continue
 
-        data = [self.token['p2i'][p] for p in data][:max_length]
+        data_tmp = []
+        for p in data:
+          try:
+            data_tmp.append(self.token['p2i'][p])
+          except KeyError:
+            data_tmp.append(self.token['p2i'][p[0]])
+            
+        data = data_tmp[:max_length]
 
         self.data.append(data)
         self.data_lens.append(len(data))

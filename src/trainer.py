@@ -24,12 +24,21 @@ class Trainer:
 
     print(f"current device {self.device}")
 
-  def save_checkpoint(self):
+  def save_checkpoint(self, name=''):
     raw_model = self.model.module if hasattr(self.model,"module")  \
       else self.model
 
     logger.info("saving %s", self.config.ckpt_path)
-    torch.save(raw_model.state_dict(), self.config.ckpt_path)
+    if self.config.ckpt_path[-1] == "/" :
+      dire = self.config.ckpt_path 
+    else:
+      dire = self.config.ckpt_path + "/"
+
+    if name != '':
+      dire += name + '_'
+
+    torch.save(raw_model.state_dict(), dire+"state_dict")
+    torch.save(raw_model, dire+"pytorch_model")
 
   def train(self):
     model, config = self.model, self.config
@@ -65,6 +74,8 @@ class Trainer:
             self.tokens += (y >= 1).sum()
             if self.tokens < config.warmup_tokens:
               lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
+            elif self.tokens > config.final_tokens:
+              lr_mult = 0.01
             else:
               progress = float(self.tokens - config.warmup_tokens) / \
                 float(max(1, config.final_tokens - config.warmup_tokens))

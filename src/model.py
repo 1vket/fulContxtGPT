@@ -193,7 +193,7 @@ class GPT(nn.Module):
     for i in range(int(self.config.max_length)):
       b, t = src.size()
       if self.config.conv_embd:
-        input = F.pad(idx, (self.config.n_pad, 0))
+        input = F.pad(src, (self.config.n_pad, 0))
         input = input.unsqueeze(1) / self.config.vocab_size
         token_embeddings = self.tok_emb(input)
         token_embeddings = token_embeddings.transpose(1,2)
@@ -207,7 +207,6 @@ class GPT(nn.Module):
       logits = self.head(x)
 
       _, o = torch.max(logits, dim=-1)
-      print(o)
 
       _, idx = torch.max(logits[:,-1], dim=-1)
 
