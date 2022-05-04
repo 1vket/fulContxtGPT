@@ -70,6 +70,28 @@ class Block(nn.Module):
     x = x + self.mlp(self.ln2(x))
     return x
 
+class ConvBlock(Block):
+  def __init__(self, config):
+    super().__init__(config)
+
+    self.config = config
+
+    self.conv = nn.Conv1d(
+      config.n_embd, config.n_embd, config.n_kernel, config.n_stride
+    )
+
+  def forward(self, x):
+    x = x.transpose(-1,-2) # (b, l, e) -> (b, e, l)
+
+    # padd
+    x = F.pad(x, (self.config.n_pad, 0))
+    x = self.conv(x)
+    x = x.transpose(-1,-2) # (b, e, l) -> (b, l, e)
+
+    super().forward(x)
+
+    return x
+
 
 class GPT(nn.Module):
   
@@ -89,7 +111,14 @@ class GPT(nn.Module):
       torch.zeros(1, config.block_size, config.n_embd))
     self.drop = nn.Dropout(config.embd_pdrop)
     
-    self.blocks = nn.Sequential(*[Block(config) for _ in range(config.n_layer)])
+    if config.conv_block:
+      self.blocks = nn.Sequential(
+        *[Block(config) for _ in range(config.n_layer)]
+      )
+    else:
+      self.blocks = nn.Sequential(
+        *[ConvBlock(config) for _ in range(config.n_layer)]
+      )
 
     self.ln_f = nn.LayerNorm(config.n_embd)
     self.head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -190,7 +219,7 @@ class GPT(nn.Module):
     assert t <= self.block_size, \
       "Cannot forward, model block size is exhausted."
 
-    for i in range(int(self.config.max_length)):
+    for i in range(int(self.config.max_length)-1):
       b, t = src.size()
       if self.config.conv_embd:
         input = F.pad(src, (self.config.n_pad, 0))
