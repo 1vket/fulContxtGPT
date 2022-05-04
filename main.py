@@ -23,12 +23,16 @@ train_filename = [f"./data/data/"+f"000{i}.txt"[-7:] for i in range(1, 151)]
 test_filename = './data/data/160.txt'
 
 for e in range(epoch):
-  for train in train_filename:
+  for i, train in enumerate(train_filename):
     train_dataset = fulContxtDataset(train, json_filename)
     test_dataset = fulContxtDataset(test_filename, json_filename)
 
     trainer.train_dataset = train_dataset
-    trainer.test_dataset = test_dataset
+    if i == len(train_filename) -1:
+      trainer.test_dataset = test_dataset
+    else:
+      trainer.test_dataset = None
 
     trainer.train()
+    trainer.save_checkpoint(str(e))
 

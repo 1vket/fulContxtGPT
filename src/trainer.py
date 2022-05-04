@@ -52,7 +52,7 @@ class Trainer:
       pbar = tqdm(enumerate(loader)) if is_train \
         else enumerate(loader)
 
-      for it, (x,y) in pbar:
+      for it, (x, y) in pbar:
         
         x = x.to(self.device)
         y = y.to(self.device)
@@ -121,8 +121,8 @@ class Trainer:
       if self.test_dataset is not None:
         test_loss = run_epoch(test_loader, is_train=False)
 
-      good_model = self.test_dataset is None or test_loss < best_loss
-      if self.config.ckpt_path is not None and good_model:
-        best_loss = test_loss
-        self.save_checkpoint()
+      #good_model = test_loss is not None or test_loss < best_loss
+      #if self.config.ckpt_path is not None and good_model:
+      #  best_loss = test_loss
+      self.save_checkpoint()
 
